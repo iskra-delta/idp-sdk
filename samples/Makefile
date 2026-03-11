@@ -9,14 +9,12 @@ CPMDISK ?= cpmdisk
 CC := sdcc
 OBJCOPY := sdobjcopy
 CFLAGS := -mz80 --std-c11 --no-std-crt0 --nostdinc --nostdlib \
-	-I$(ROOT)/include -I$(BIN_DIR)/include
+	-I$(ROOT)/include -I$(BIN_DIR)/include -I$(ROOT)/third_party/libcpm3-z80/include
 LDFLAGS := -mz80 --std-c11 --no-std-crt0 --nostdinc --nostdlib \
 	--code-loc 0x100 --data-loc 0
 
 CRT0 := $(BIN_DIR)/crt0cpm3-z80.rel
-LOCAL_LIBRARIES := \
-	$(BIN_DIR)/libplatform.lib \
-	$(BIN_DIR)/libsdk.lib
+LOCAL_LIBRARIES := $(BIN_DIR)/libsdk.lib
 CPM_LIB := $(BIN_DIR)/libcpm3-z80.lib
 SDCC_LIB := $(BIN_DIR)/libsdcc-z80.lib
 ALL_LIBRARIES := $(LOCAL_LIBRARIES) $(CPM_LIB) $(SDCC_LIB)

@@ -13,9 +13,12 @@
 
 #include <partner/clock.h>
 
+void _conio_init(void);
+
 void _libinit(void) {
     libplatform = PLATFORM_NAME_STR;
     nltype = NL_CRLF;
+    _conio_init();
 }
 
 void msleep(int millisec) {

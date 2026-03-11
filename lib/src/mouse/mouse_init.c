@@ -9,6 +9,8 @@
 
 #include "common.h"
 
+void _mouse_logi_purge(mouse_t *mouse);
+
 mouse_t *mouse_init(mouse_type_t type) {
     mouse_t *mouse;
     sio_bauds bauds = SIO_BAUDS_2400;
@@ -45,6 +47,11 @@ mouse_t *mouse_init(mouse_type_t type) {
     }
 
     mouse->type = type;
+    serial_set_dtr(mouse->serial, true);
+    serial_set_rts(mouse->serial, true);
     mouse_reset(mouse);
+    if (type == MOUSE_GENIUS_C7) {
+        _mouse_logi_purge(mouse);
+    }
     return mouse;
 }

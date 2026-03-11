@@ -122,6 +122,9 @@ extern bool serial_send(sio_port *port);
 /* Assert or deassert RTS on the selected serial port. */
 extern void serial_set_rts(sio_port *port, bool state);
 
+/* Assert or deassert DTR on the selected serial port. */
+extern void serial_set_dtr(sio_port *port, bool state);
+
 /* Read the current CTS state from the selected serial port. */
 extern bool serial_check_cts(sio_port *port);
 

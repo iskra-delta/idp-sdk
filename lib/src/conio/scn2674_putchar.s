@@ -21,7 +21,7 @@
         ;; writes char and attribute at cursor
         ;; NOTES:
         ;;  writes the character and attribute to the
-        ;;  current cursor position without moving it
+        ;;  current cursor position and lets the controller advance
         ;; inputs: a=ch, l=attr
         ;; outputs: none
         ;; affects: af, bc, hl
@@ -35,6 +35,6 @@ _scn2674_putchar::
         out     (SCN2674_AT),a
         call    _scn2674_wait_rdy
         call    _scn2674_wait_rdy
-        ld      a,#SCN2674_CMD_WAC_NO_MOVE
+        ld      a,#SCN2674_CMD_WAC
         out     (SCN2674_CMD),a
         ret

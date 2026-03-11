@@ -17,8 +17,8 @@
         ;; NOTES:
         ;;  converts one packed bcd value to binary
         ;; inputs: a=bcd
-        ;; outputs: l=binary value
-        ;; affects: af, bc, hl
+        ;; outputs: a=binary value
+        ;; affects: af, bc
 _bcd2bin::
         ld      c,a
         and     #0xf0
@@ -31,5 +31,4 @@ _bcd2bin::
         ld      a,c
         and     #0x0f
         add     a,b
-        ld      l,a
         ret

@@ -14,5 +14,5 @@
         ;; uint8_t _serial_port_in(uint8_t port)
 __serial_port_in::
         ld      c,a
-        in      l,(c)
+        in      a,(c)
         ret

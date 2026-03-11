@@ -10,7 +10,6 @@
         .module kbd_beep
 
         .globl  _kbd_beep
-        .globl  _kbd_wait_ready
 
         .include "serial.inc"
 
@@ -25,14 +24,20 @@
         ;; affects: af, bc
 _kbd_beep::
         ld      b,a              ; B = long_beep (save; wait only affects AF)
-        call    _kbd_wait_ready
+        call    .wait_ready
         ld      a,#0x07
         out     (#Z80SIO1_DATA_A),a
         ld      a,b              ; A = long_beep
         or      a
         ret     z
 
-        call    _kbd_wait_ready
+        call    .wait_ready
         ld      a,#0x07
         out     (#Z80SIO1_DATA_A),a
+        ret
+
+.wait_ready:
+        in      a,(#Z80SIO1_CTRL_A)
+        and     #Z80SIO_RR0_TX_EMPTY
+        jr      z,.wait_ready
         ret

@@ -10,8 +10,6 @@
  *
  */
 #include <stdint.h>
-#include <stdio.h>
-
 #include <partner/conio.h>
 #include <partner/mouse.h>
 
@@ -22,17 +20,14 @@
 #define POINTER_CH     '+'
 
 static void draw_status(const mouse_t *mouse) {
-    char text[64];
-
     gotoxy(0, STATUS_ROW);
     setattr(AT_NORMAL);
-    sprintf(text, "x=%3d y=%2d buttons=%u   ", mouse->x, mouse->y, mouse->buttons);
-    cputs(text);
+    cprintf("x=%3d y=%2d buttons=%u   ", mouse->x, mouse->y, mouse->buttons);
 }
 
 static void draw_pointer(uint8_t x, uint8_t y, char ch) {
     gotoxy(x, y);
-    setattr(AT_REVERSE | AT_HIGHLIGHT);
+    setattr((ch == ' ') ? AT_NORMAL : (AT_REVERSE | AT_HIGHLIGHT));
     putch(ch);
 }
 
@@ -63,8 +58,12 @@ void main(void) {
     draw_status(mouse);
     draw_pointer(old_x, old_y, POINTER_CH);
 
-    while (!kbhit()) {
+    for (;;) {
         mouse_poll(mouse);
+
+        if ((mouse->buttons & MOUSE_BUTTON_LEFT) != 0) {
+            break;
+        }
 
         if (mouse->x < 0) {
             mouse->x = 0;

@@ -8,5 +8,11 @@
 #include "common.h"
 
 int kbhit(void) {
-    return (unsigned char)kbd_get_key();
+    if (_conio_kbhit_use_bdos)
+        return (unsigned char)bdos(C_RAWIO, 0x00ff);
+    return (unsigned char)kbd_poll_key();
+}
+
+void kbhit_set_bdos(bool use_bdos) {
+    _conio_kbhit_use_bdos = use_bdos;
 }

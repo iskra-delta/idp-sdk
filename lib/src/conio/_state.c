@@ -16,3 +16,5 @@ struct text_info _ti = {
     0xff,   /* curx */
     0xff    /* cury */
 };
+
+bool _conio_kbhit_use_bdos = true;

@@ -7,7 +7,7 @@
         ;;
         ;; 04.04.2012   tstih
 
-        .equ MAX_BURST_CYCLE,           8
+        .equ MAX_BURST_CYCLE,           6
 
         ;; --- 0x34 - R/W:character register ----------------------------------
         .equ SCN2674_CHR,               0x34

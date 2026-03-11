@@ -17,8 +17,8 @@
         ;; NOTES:
         ;;  converts one 8-bit value to packed bcd
         ;; inputs: a=bin
-        ;; outputs: l=bcd value
-        ;; affects: af, bc, hl
+        ;; outputs: a=bcd value
+        ;; affects: af, bc
 _bin2bcd::
         ld      c,a
         ld      b,#0x08
@@ -28,5 +28,4 @@ _bin2bcd::
         adc     a,a
         daa
         djnz    .b2bloop
-        ld      l,a
         ret

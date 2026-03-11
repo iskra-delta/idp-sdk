@@ -30,8 +30,11 @@ struct text_info {
     unsigned char cury;         /* y-coordinate */
 }; 
 
-/* check for keypress (don't block), return 0 if no key */
+/* Check for keypress using the currently selected backend. */
 extern int kbhit(void);
+
+/* Select whether kbhit() uses BDOS or raw keyboard polling. */
+extern void kbhit_set_bdos(bool use_bdos);
 
 /* move cursor to x,y */
 extern void gotoxy(int x, int y);
@@ -54,6 +57,9 @@ extern void rdchat(char *c, unsigned char *attr);
 /* fast put string */
 extern int cputs(const char *str);
 
+/* formatted console output without stdio */
+extern int cprintf(const char *fmt, ...);
+
 /* current x */
 extern int wherex(void);
 
@@ -65,14 +71,13 @@ extern int wherey(void);
 #define NORMALCURSOR    1
 extern void setcursortype(int cur_t);
 
-/* Wait until the keyboard interface is ready for the next transfer. */
-extern void kbd_wait_ready(void);
-
 /* Trigger a short or long keyboard beep. */
 extern void kbd_beep(bool long_beep);
 
-/* Read one raw key value from the keyboard interface. */
-extern char kbd_get_key(void);
+/* Poll one raw key value from the keyboard interface.
+ * SIO 1 channel A must already be configured for polling before use.
+ */
+extern char kbd_poll_key(void);
 
 /* Wait until the display controller memory access is available. */
 extern void scn2674_wait_mem_acc(void);
