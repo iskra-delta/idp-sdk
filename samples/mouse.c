@@ -12,7 +12,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <partner.h>
+#include <partner/conio.h>
+#include <partner/mouse.h>
 
 #define SCREEN_WIDTH   132
 #define SCREEN_HEIGHT  26

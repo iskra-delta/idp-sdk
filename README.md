@@ -1,110 +1,277 @@
-# libpartner
+# idp-sdk
 
-`libpartner` is a static library for the Iskra Delta Partner.
+Static SDK for the Iskra Delta Partner, built with SDCC Z80 and CP/M 3 runtime support.
 
-It exposes three layers:
+The SDK ships:
 
-- top-level convenience APIs in `include/partner/`
-- Partner-specific hardware APIs in `include/partner/hw/partner/`
-- raw chip declarations in `include/partner/hw/chips/`
+- `libplatform.lib` for Partner-specific platform hooks required by `libcpm3-z80`
+- `libsdk.lib` for console I/O, serial communication, mouse support, clock helpers, and debug helpers
+- rebuilt copies of `libcpm3-z80`, `libsdcc-z80`, and `crt0cpm3-z80`
+- public headers under `include/partner/`
+- sample CP/M `.COM` programs under `samples/`
 
-Build output:
+## Table of contents
 
-- library: `bin/libpartner.lib`
-- exported headers: `bin/include/partner/...`
-- sample programs: `bin/samples/*.com`
-- sample disk image: `bin/samples.img`
+- [Introduction](#introduction)
+- [Repository layout](#repository-layout)
+- [Build](#build)
+- [Build outputs](#build-outputs)
+- [Compiling your own program](#compiling-your-own-program)
+- [Samples](#samples)
+- [Public headers](#public-headers)
+- [API reference](#api-reference)
+- [partner/bcd.h](#partnerbcdh)
+- [partner/clock.h](#partnerclockh)
+- [partner/conio.h](#partnerconioh)
+- [partner/debug.h](#partnerdebugh)
+- [partner/mouse.h](#partnermouseh)
+- [partner/serial.h](#partnerserialh)
+- [partner/timer.h](#partnertimerh)
+
+## Introduction
+
+`idp-sdk` is an SDK for writing CP/M 3 programs for the Iskra Delta Partner.
+It combines:
+
+- Partner-specific SDK code from this repository
+- `libcpm3-z80` rebuilt with `PLATFORM=PARTNER`
+- `libsdcc-z80` rebuilt locally into the final `bin/` output
+
+The public API is intentionally small. Raw hardware port maps are kept internal under `lib/include/hw/` and are not installed as part of the public SDK surface.
+
+## Repository layout
+
+| Path | Purpose |
+|------|---------|
+| `include/partner/` | Public SDK headers |
+| `lib/src/` | SDK implementation sources |
+| `lib/include/hw/` | Internal hardware maps and private low-level constants |
+| `samples/` | Small example programs |
+| `third_party/libcpm3-z80/` | Vendored CP/M 3 standard library source |
+| `third_party/libsdcc-z80/` | Vendored SDCC support library source |
+| `third_party/cpmdisk/` | Disk image tool used for packaging samples |
+| `bin/` | Final libraries, CRT0, exported headers, and samples |
+| `build/` | Intermediate build artifacts |
 
 ## Build
 
-Build the library:
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `make` | Build the SDK libraries, CRT0, exported headers, and samples |
+| `make build` | Build libraries, CRT0, and exported headers only |
+| `make samples` | Build the SDK and package the sample `.COM` files into a disk image |
+| `make cpmdisk` | Build the local `cpmdisk` binary |
+| `make clean` | Remove `build/` and `bin/` |
+| `make shell` | Open a shell in the Docker image used for the Z80 builds |
+
+### Build model
+
+- SDK and CP/M library builds run inside the `wischner/sdcc-z80` Docker image
+- `cpmdisk` is compiled locally on the host machine
+- third-party repositories are cloned into `third_party/` on demand and kept as a local cache
+
+### Main variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `IMAGE` | `wischner/sdcc-z80` | Docker image used for Z80 compilation |
+| `DOCKER` | `docker` | Docker executable |
+| `CPMDISK` | `cpmdisk` | Host-side `cpmdisk` command |
+
+## Build outputs
+
+After a successful build, `bin/` contains:
+
+| File | Description |
+|------|-------------|
+| `libplatform.lib` | Partner platform implementation required by `libcpm3-z80` |
+| `libsdk.lib` | All Partner SDK functionality except platform hooks |
+| `libcpm3-z80.lib` | Rebuilt CP/M 3 standard library |
+| `libsdcc-z80.lib` | Rebuilt SDCC support library |
+| `crt0cpm3-z80.rel` | CP/M 3 startup object; link this first |
+| `include/partner/*.h` | Exported public SDK headers |
+| `samples/*.com` | Built sample programs |
+| `samples.img` | CP/M disk image containing the sample programs |
+
+## Compiling your own program
+
+Compile:
 
 ```sh
-make
+sdcc -mz80 --std-c11 --no-std-crt0 --nostdinc --nostdlib \
+  -Ibin/include -c -o myprog.rel myprog.c
 ```
 
-Build sample `.com` programs and package them into a CP/M disk image:
+Link:
+
+```sh
+sdcc -mz80 --std-c11 --no-std-crt0 --nostdinc --nostdlib \
+  --code-loc 0x100 --data-loc 0 \
+  -o myprog.ihx \
+  bin/crt0cpm3-z80.rel myprog.rel \
+  bin/libplatform.lib bin/libsdk.lib \
+  bin/libcpm3-z80.lib bin/libsdcc-z80.lib
+```
+
+Convert to `.COM`:
+
+```sh
+sdobjcopy -I ihex -O binary myprog.ihx myprog.com
+```
+
+Important notes:
+
+- `crt0cpm3-z80.rel` must appear first on the link line
+- your object files should come next
+- `libplatform.lib` and `libsdk.lib` must be linked before `libcpm3-z80.lib`
+- `libsdcc-z80.lib` must be linked last
+- CP/M `.COM` programs must use `--code-loc 0x100 --data-loc 0`
+
+## Samples
+
+The `samples/` directory currently contains:
+
+| Sample | Description |
+|--------|-------------|
+| `hello.c` | Minimal hello-world style example |
+| `console.c` | Console I/O and debug API example |
+| `mouse.c` | Serial mouse initialization and polling example |
+| `terminal.c` | Serial communication example |
+
+Build all samples and package them into a disk image:
 
 ```sh
 make samples
 ```
 
-Typical compile line for your own program:
+## Public headers
 
-```sh
-sdcc -mz80 -Ibin/include myprog.c bin/libpartner.lib
-```
-
-## Public Headers
-
-- `partner.h`
-- `partner/bcd.h`
-- `partner/conio.h`
-- `partner/mouse.h`
-- `partner/port.h`
-- `partner/timer.h`
-- `partner/hw/partner/avdc.h`
-- `partner/hw/partner/kbd.h`
-- `partner/hw/partner/nvram.h`
-- `partner/hw/partner/rtc.h`
-- `partner/hw/partner/serial.h`
-- `partner/hw/chips/scn2674.h`
-- `partner/hw/chips/mm58167a.h`
-- `partner/hw/chips/z80sio.h`
-
-## API Reference
-
-<details>
-<summary><code>partner.h</code></summary>
-
-Umbrella include for the main public API.
-
-Includes:
+The installed SDK exports these headers:
 
 - `partner/bcd.h`
+- `partner/clock.h`
 - `partner/conio.h`
+- `partner/debug.h`
 - `partner/mouse.h`
-- `partner/hw/partner/nvram.h`
-- `partner/hw/partner/serial.h`
+- `partner/serial.h`
 - `partner/timer.h`
 
-Example:
+## API reference
 
-```c
-#include <partner.h>
-```
+This section documents every public function exported by the SDK.
 
-</details>
+## partner/bcd.h
 
-<details>
-<summary><code>partner/bcd.h</code></summary>
+Packed BCD conversion helpers used by the clock code and available to user programs.
 
-8-bit packed BCD conversion helpers.
+### `uint8_t bin2bcd(uint8_t bin)`
 
-`uint8_t bin2bcd(uint8_t bin);`
+Converts an 8-bit binary value to packed BCD. For example, decimal `45` becomes `0x45`.
 
-```c
-#include <partner/bcd.h>
+- Input is expected to be a decimal value that fits in two BCD digits
+- Output stores the tens digit in the high nibble and the ones digit in the low nibble
+- Useful when preparing `rtc_time_t` fields for manual low-level work
 
-uint8_t bcd = bin2bcd(45); /* 0x45 */
-```
+### `uint8_t bcd2bin(uint8_t bcd)`
 
-`uint8_t bcd2bin(uint8_t bcd);`
+Converts an 8-bit packed BCD value to plain binary.
 
-```c
-#include <partner/bcd.h>
+- Input is expected to be a valid packed BCD value
+- Output is the decoded decimal value
+- Used internally by the RTC and timer helpers
 
-uint8_t value = bcd2bin(0x59); /* 59 */
-```
+## partner/clock.h
 
-</details>
+Clock, RTC, and BCD helpers. This header combines short-interval timing and wall-clock RTC access.
 
-<details>
-<summary><code>partner/conio.h</code></summary>
+### Types
 
-Fast text console helpers built on the Partner AVDC.
+#### `rtc_time_t`
 
-Attributes:
+Binary representation of the Partner RTC state.
+
+| Field | Meaning |
+|-------|---------|
+| `hsec` | Hundredths of a second |
+| `sec` | Seconds |
+| `min` | Minutes |
+| `hour` | Hours |
+| `wday` | Weekday |
+| `mday` | Day of month |
+| `month` | Month |
+| `year` | Two-digit year |
+
+### `uint8_t bin2bcd(uint8_t bin)`
+
+Same BCD conversion helper as exported by `partner/bcd.h`.
+
+### `uint8_t bcd2bin(uint8_t bcd)`
+
+Same BCD conversion helper as exported by `partner/bcd.h`.
+
+### `uint16_t timer_ms(void)`
+
+Returns the current time within a rolling 60-second window, in milliseconds.
+
+- Resolution is derived from the RTC subsecond registers
+- The value wraps every 60 seconds
+- Best suited for short-duration interval measurements, not absolute timestamps
+
+### `int16_t timer(void)`
+
+Returns the current time within a rolling 60-second window, in 1/100-second ticks.
+
+- Lower resolution than `timer_ms()`
+- Wraps every 60 seconds
+- Useful for short polling loops and lightweight timeouts
+
+### `int16_t timer_diff(uint16_t timer_start, uint16_t timer_offset)`
+
+Computes a wrapped elapsed interval from a previous timer value.
+
+- `timer_start` is the earlier timer reading
+- `timer_offset` is a caller-supplied offset added before comparison
+- Handles wraparound inside the 60-second timer window
+
+### `void rtc_reset(void)`
+
+Resets the RTC counters before reprogramming the clock.
+
+- Used before writing a new RTC time
+- Intended for clock control, not for generic timing loops
+
+### `void rtc_reset_nvram(void)`
+
+Resets the RTC NVRAM/flag area.
+
+- This is part of the RTC support surface
+- It does not reintroduce the old NVRAM storage API that was removed from the SDK
+
+### `void rtc_get(rtc_time_t *t)`
+
+Reads the current RTC date and time into `*t`.
+
+- Output fields are returned in binary form, not packed BCD
+- Caller must pass a valid pointer
+- Intended for applications that need wall-clock time
+
+### `void rtc_set(const rtc_time_t *t)`
+
+Writes a new date and time to the RTC from `*t`.
+
+- Input fields are expected in binary form
+- Caller must pass a valid pointer
+- Intended for setup/configuration utilities
+
+## partner/conio.h
+
+Console and text-screen helpers for the Partner display and keyboard path.
+
+### Constants
+
+Text attributes:
 
 - `AT_NORMAL`
 - `AT_BLINK`
@@ -117,613 +284,498 @@ Cursor modes:
 - `NOCURSOR`
 - `NORMALCURSOR`
 
-`int kbhit(void);`
+### Types
 
-```c
-int ch = kbhit();
-if (ch) putch(ch);
-```
+#### `struct text_info`
 
-`void gotoxy(int x, int y);`
+Current text console state snapshot.
 
-```c
-gotoxy(10, 5);
-```
+| Field | Meaning |
+|-------|---------|
+| `attr` | Current text attribute |
+| `screenheight` | Screen height in rows |
+| `screenwidth` | Screen width in columns |
+| `curx` | Current cursor X position |
+| `cury` | Current cursor Y position |
 
-`void clrscr(void);`
+### `int kbhit(void)`
 
-```c
-clrscr();
-```
+Checks whether a key is available without blocking.
 
-`void setattr(unsigned char attr);`
+- Returns `0` if no key is waiting
+- Returns a non-zero value when input is ready
+- Useful for non-blocking UI loops
 
-```c
-setattr(AT_HIGHLIGHT | AT_BLINK);
-```
+### `void gotoxy(int x, int y)`
 
-`void gettextinfo(struct text_info *r);`
+Moves the text cursor to the specified column and row.
 
-```c
-struct text_info ti;
-gettextinfo(&ti);
-```
+- Coordinates are console coordinates, not raw video memory addresses
+- Intended for absolute cursor positioning
 
-`int putch(int c);`
+### `void clrscr(void)`
 
-```c
-putch('A');
-```
+Clears the text screen and resets the cursor to the home position.
 
-`void rdchat(char *c, unsigned char *attr);`
+- Fast full-screen clear path
+- Useful before drawing menus or full-screen UIs
 
-```c
-char ch;
-unsigned char attr;
-rdchat(&ch, &attr);
-```
+### `void setattr(unsigned char attr)`
 
-`int cputs(const char *str);`
+Changes the current text attribute used by higher-level output routines.
 
-```c
-cputs("Partner");
-```
+- Accepts a combination of `AT_*` flags
+- Affects later text output rather than rewriting existing screen cells
 
-`int wherex(void);`
+### `void gettextinfo(struct text_info *r)`
 
-```c
-int x = wherex();
-```
+Stores the current text console state into `*r`.
 
-`int wherey(void);`
+- Caller must provide a valid pointer
+- Useful for layout code that needs current dimensions or cursor position
 
-```c
-int y = wherey();
-```
+### `int putch(int c)`
 
-`void setcursortype(int cur_t);`
+Writes a single character to the console using the current attribute.
 
-```c
-setcursortype(NOCURSOR);
-```
+- Intended for fast character output
+- Returns the written character value
 
-</details>
+### `void rdchat(char *c, unsigned char *attr)`
 
-<details>
-<summary><code>partner/mouse.h</code></summary>
+Reads the character and attribute at the current cursor position.
 
-Generic streaming serial mouse support.
+- `c` receives the character
+- `attr` receives the attribute byte
+- Both pointers must be valid
 
-Supported protocols:
+### `int cputs(const char *str)`
+
+Writes a zero-terminated string to the console.
+
+- Uses the current attribute
+- Does not require formatted I/O
+- Returns the last written character value as an `int`
+
+### `int wherex(void)`
+
+Returns the current cursor X position.
+
+### `int wherey(void)`
+
+Returns the current cursor Y position.
+
+### `void setcursortype(int cur_t)`
+
+Changes cursor visibility.
+
+- `NOCURSOR` hides the cursor
+- `NORMALCURSOR` shows the cursor
+
+### `void kbd_wait_ready(void)`
+
+Waits until the keyboard/terminal path is ready for the next transfer.
+
+- Low-level helper exposed publicly
+- Useful only when writing very hardware-aware console code
+
+### `void kbd_beep(bool long_beep)`
+
+Triggers a short or long terminal beep.
+
+- `false` produces a short beep
+- `true` produces a longer beep sequence
+
+### `char kbd_get_key(void)`
+
+Reads one key from the keyboard path.
+
+- Blocks until a key is available
+- Returns a raw/normalized key value from the Partner keyboard handler
+
+### `void scn2674_wait_mem_acc(void)`
+
+Waits for a safe SCN2674 memory access window.
+
+- Low-level display helper
+- Mainly useful for direct screen-controller work
+
+### `uint16_t scn2674_cursor_addr(void)`
+
+Returns the current SCN2674 cursor address.
+
+- Address is a controller/display-memory address, not a console `(x, y)` pair
+
+### `void scn2674_cache_rows(void)`
+
+Refreshes the internal cache of row base addresses.
+
+- Used by higher-level text rendering helpers
+- Normally not needed in simple applications
+
+### `void scn2674_invalidate_row_cache(void)`
+
+Invalidates the cached row base addresses.
+
+- Forces a later refresh
+- Useful if the screen start/pointer state changed outside the normal console helpers
+
+### `uint16_t scn2674_rowptr(uint8_t row)`
+
+Returns the display-memory base address for the specified row.
+
+- `row` is a text row index
+- Result is a raw controller memory address
+
+### `void scn2674_cls(void)`
+
+Clears the text screen using the SCN2674 fast path.
+
+- Lower-level equivalent behind `clrscr()`
+
+### `void scn2674_show_cursor(void)`
+
+Enables the hardware text cursor.
+
+### `void scn2674_hide_cursor(void)`
+
+Disables the hardware text cursor.
+
+### `void scn2674_xy(int x, int y)`
+
+Moves the hardware cursor to console coordinates `(x, y)`.
+
+- Lower-level equivalent behind `gotoxy()`
+
+### `void scn2674_putchar(char ch, unsigned char attr)`
+
+Writes a character and attribute directly through the SCN2674.
+
+- `ch` is the character to write
+- `attr` is the raw attribute byte
+
+### `void scn2674_getchar(char *ch, unsigned char *attr)`
+
+Reads a character and attribute through the SCN2674.
+
+- `ch` receives the character
+- `attr` receives the attribute
+- Both pointers must be valid
+
+## partner/debug.h
+
+Low-level debug helpers for reading CPU state and arbitrary memory.
+
+### Types
+
+#### `z80_registers_t`
+
+Snapshot of visible and shadow Z80 register state.
+
+| Field | Meaning |
+|-------|---------|
+| `af`, `bc`, `de`, `hl` | Main register pairs |
+| `ix`, `iy` | Index registers |
+| `sp`, `pc` | Stack pointer and program counter |
+| `af_shadow`, `bc_shadow`, `de_shadow`, `hl_shadow` | Shadow register pairs |
+| `i`, `r` | Interrupt and refresh registers |
+
+### `const z80_registers_t *z80_read_regs(void)`
+
+Captures and returns a snapshot of the current register set.
+
+- Returns a pointer to an internal/static snapshot buffer
+- Useful for monitors, diagnostics, and debug UIs
+
+### `uint8_t z80_read_mem(uint16_t address)`
+
+Reads one byte from the specified memory address.
+
+- Intended for debug/inspection use
+- Does not allocate memory or change program state beyond the read
+
+### `void z80_read_mem_block(uint8_t *dest, uint16_t source, uint16_t len)`
+
+Copies a block of memory into `dest`.
+
+- `source` is the starting memory address to inspect
+- `len` is the number of bytes to copy
+- Caller must provide a destination buffer large enough for `len` bytes
+
+## partner/mouse.h
+
+Streaming serial mouse support built on top of the SDK serial layer.
+
+### Constants
+
+Mouse protocol selectors:
 
 - `MOUSE_MICROSOFT`
 - `MOUSE_GENIUS_C7`
 - `MOUSE_MOUSESYSTEMS`
+- `MOUSE_LOGITECH` as a compatibility alias for `MOUSE_GENIUS_C7`
 
-Button bits:
+Button masks:
 
 - `MOUSE_BUTTON_LEFT`
 - `MOUSE_BUTTON_MIDDLE`
 - `MOUSE_BUTTON_RIGHT`
 
-Type:
+### Types
 
-- `mouse_t`
+#### `mouse_t`
 
-`mouse_t *mouse_init(mouse_type_t type);`
+Current decoded mouse state and decoder context.
 
-```c
-mouse_t *mouse = mouse_init(MOUSE_GENIUS_C7);
-```
+| Field | Meaning |
+|-------|---------|
+| `type` | Active mouse protocol |
+| `serial` | Underlying serial port object |
+| `x`, `y` | Accumulated position |
+| `dx`, `dy` | Latest decoded movement delta |
+| `buttons` | Current button mask |
+| `packet[5]` | Decoder scratch buffer |
+| `count` | Current packet byte count |
+| `synced` | Decoder synchronization state |
 
-`void mouse_reset(mouse_t *mouse);`
+### `mouse_t *mouse_init(mouse_type_t type)`
 
-```c
-mouse_reset(mouse);
-```
+Initializes a serial mouse decoder for the specified protocol.
 
-`void mouse_poll(mouse_t *mouse);`
+- Allocates and returns a `mouse_t`
+- Also initializes the serial port used for the mouse stream
+- Returns `NULL` on allocation or initialization failure
 
-```c
-mouse_poll(mouse);
-```
+### `void mouse_reset(mouse_t *mouse)`
 
-`void mouse_done(mouse_t *mouse);`
+Resets decoder synchronization and accumulated movement state.
 
-```c
-mouse_done(mouse);
-```
+- Does not free the object
+- Useful after protocol desynchronization or manual re-centering
 
-</details>
+### `void mouse_poll(mouse_t *mouse)`
 
-<details>
-<summary><code>partner/port.h</code></summary>
+Polls the underlying serial port and decodes any pending mouse packet data.
 
-Generic Z80 I/O port access helpers.
+- Non-blocking polling style
+- Updates `dx`, `dy`, `buttons`, and accumulated position fields
 
-`uint8_t port_in(uint8_t port);`
+### `void mouse_done(mouse_t *mouse)`
 
-```c
-#include <partner/port.h>
+Releases all resources owned by the mouse object.
 
-uint8_t status = port_in(0xD9);
-```
+- Shuts down the associated serial object
+- Frees the mouse state allocation
 
-`void port_out(uint8_t port, uint8_t value);`
+## partner/serial.h
 
-```c
-#include <partner/port.h>
+Polling serial communication layer with configurable baud, framing, flow control, and buffered I/O.
 
-port_out(0xD8, 'A');
-```
+### Types
 
-</details>
+#### `sio_flow_control`
 
-<details>
-<summary><code>partner/timer.h</code></summary>
+Transmit/receive flow control mode.
 
-Short-interval timer helpers built on the RTC.
+- `SIO_FLOW_CONTROL_RTSCTS`
+- `SIO_FLOW_CONTROL_XONXOFF`
+- `SIO_FLOW_CONTROL_NONE`
 
-`uint16_t timer_ms(void);`
+#### `sio_bauds`
 
-```c
-uint16_t t0 = timer_ms();
-```
+Baud-rate selector values understood by the SDK serial initializer.
 
-`int16_t timer(void);`
+- `SIO_BAUDS_153600`
+- `SIO_BAUDS_9600`
+- `SIO_BAUDS_4800`
+- `SIO_BAUDS_2400`
 
-```c
-int16_t t = timer();
-```
+#### `sio_stop_bits`
 
-`int16_t timer_diff(uint16_t timer_start, uint16_t timer_offset);`
+Stop-bit settings.
 
-```c
-uint16_t start = timer();
-int16_t dt = timer_diff(start, 0);
-```
+- `SIO_STOP_BITS_1`
+- `SIO_STOP_BITS_2`
 
-</details>
+#### `sio_parity`
 
-<details>
-<summary><code>partner/hw/partner/nvram.h</code></summary>
+Parity settings.
 
-Partner non-volatile terminal setup storage backed by MM58167A.
+- `SIO_PARITY_ODD`
+- `SIO_PARITY_EVEN`
+- `SIO_PARITY_NONE`
 
-Type:
+#### `sio_data_bits`
 
-- `nvram_settings_t`
+Word-length settings.
 
-`void nvram_get_settings(nvram_settings_t *settings);`
+- `SIO_DATA_BITS_5`
+- `SIO_DATA_BITS_6`
+- `SIO_DATA_BITS_7`
+- `SIO_DATA_BITS_8`
 
-```c
-nvram_settings_t settings;
-nvram_get_settings(&settings);
-```
+#### `sio_mode`
 
-`void nvram_set_settings(const nvram_settings_t *settings);`
+Serial operating mode.
 
-```c
-nvram_settings_t settings;
-nvram_get_settings(&settings);
-settings.width = 132;
-nvram_set_settings(&settings);
-```
+- `SIO_MODE_POLLING`
 
-</details>
+#### `sio_exit_code`
 
-<details>
-<summary><code>partner/hw/partner/avdc.h</code></summary>
+Result code returned by `serial_exchange()`.
 
-Partner AVDC services and Partner-specific SCN2674 register map.
+- `SIO_EXIT_CODE_NO_ACTIVITY`
+- `SIO_EXIT_CODE_BUFFER_FULL`
+- `SIO_EXIT_CODE_BUFFER_OVERFLOW`
 
-Common constants:
+#### `sio_port_addr`
 
-- `SCN2674_CHR`
-- `SCN2674_AT`
-- `SCN2674_CMD`
-- `SCN2674_STS`
-- `SCN2674_AT_BLINK`
-- `SCN2674_AT_UNDERLINE`
-- `SCN2674_AT_HIGHLIGHT`
-- `SCN2674_AT_REVERSE`
+Logical serial-port selector.
 
-`void avdc_wait_mem_acc(void);`
+- `SIO_PORT_CRT`
+- `SIO_PORT_LPT`
+- `SIO_PORT_VAX`
+- `SIO_PORT_MOD`
 
-```c
-avdc_wait_mem_acc();
-```
+These are logical SDK port IDs, not raw hardware port numbers.
 
-`uint16_t avdc_cursor_addr(void);`
+#### `sio_buffer`
 
-```c
-uint16_t addr = avdc_cursor_addr();
-```
+Circular buffer state used for transmit and receive queues.
 
-`void avdc_cache_rows(void);`
+| Field | Meaning |
+|-------|---------|
+| `values` | Backing storage |
+| `put_ptr` | Write index |
+| `get_ptr` | Read index |
+| `count` | Number of bytes currently stored |
+| `size` | Total buffer capacity |
 
-```c
-avdc_cache_rows();
-```
+#### `sio_port`
 
-`void avdc_invalidate_row_cache(void);`
+Full serial-port state used by the SDK.
 
-```c
-avdc_invalidate_row_cache();
-```
+| Field | Meaning |
+|-------|---------|
+| `buffer_in` | Receive queue |
+| `buffer_out` | Transmit queue |
+| `no_activity_thr` | Poll-loop inactivity threshold |
+| `in_buffer_ext` | Guard space before the input buffer is considered full |
+| `wr5` | Cached transmit control register value |
+| `addr` | Logical SDK port selector |
+| `flow_control` | Active flow control mode |
+| `xon_send` | XON/XOFF transmit state |
+| `xon_rcv` | XON/XOFF receive state |
 
-`uint16_t avdc_rowptr(uint8_t row);`
+### `sio_port *serial_init(sio_port_addr port_addr, sio_mode mode, sio_bauds bauds, sio_data_bits data_bits, sio_stop_bits stop_bits, sio_parity parity, sio_flow_control flow_control)`
 
-```c
-uint16_t row0 = avdc_rowptr(0);
-```
+Initializes a serial port with the SDK default buffer sizes.
 
-`void avdc_cls(void);`
+- Returns a newly allocated `sio_port`
+- Configures framing, baud, and flow control
+- Returns `NULL` on failure
 
-```c
-avdc_cls();
-```
+### `sio_port *serial_init_ex(sio_port_addr port_addr, sio_mode mode, sio_bauds bauds, sio_data_bits data_bits, sio_stop_bits stop_bits, sio_parity parity, sio_flow_control flow_control, uint16_t out_buffer_sz, uint16_t in_buffer_sz, uint16_t in_buffer_ext, uint16_t no_activity_thr)`
 
-`void avdc_show_cursor(void);`
+Initializes a serial port with explicit buffer sizes and polling thresholds.
 
-```c
-avdc_show_cursor();
-```
+- Use this when the default buffer sizing is not appropriate
+- `in_buffer_ext` reserves headroom before the buffer is treated as effectively full
+- `no_activity_thr` controls how long polling loops wait before reporting inactivity
 
-`void avdc_hide_cursor(void);`
+### `bool serial_buffer_put(sio_buffer *buffer, uint16_t len, const uint8_t *values)`
 
-```c
-avdc_hide_cursor();
-```
+Appends `len` bytes from `values` into a circular buffer.
 
-`void avdc_xy(int x, int y);`
+- Returns `true` on success
+- Returns `false` if the buffer does not have enough free space
 
-```c
-avdc_xy(20, 10);
-```
+### `bool serial_buffer_put_ch(sio_buffer *buffer, uint8_t ch)`
 
-`void avdc_burst(const char *chars, uint8_t attr, uint8_t count);`
+Appends a single byte to a circular buffer.
 
-```c
-static const char msg[] = "HELLO";
-avdc_burst(msg, SCN2674_AT_HIGHLIGHT, 5);
-```
+- Convenience wrapper over the generic buffer append path
 
-`void avdc_putchar(char ch, unsigned char attr);`
+### `bool serial_buffer_put_str(sio_buffer *buffer, const uint8_t *str)`
 
-```c
-avdc_putchar('X', SCN2674_AT_NONE);
-```
+Appends a zero-terminated byte string to a circular buffer.
 
-`void avdc_getchar(char *ch, unsigned char *attr);`
+- Stops at the first zero byte
+- Intended for queuing text output
 
-```c
-char ch;
-unsigned char attr;
-avdc_getchar(&ch, &attr);
-```
+### `bool serial_buffer_empty(sio_buffer *buffer)`
 
-</details>
+Returns whether a circular buffer currently contains no bytes.
 
-<details>
-<summary><code>partner/hw/partner/kbd.h</code></summary>
+### `uint8_t serial_buffer_get_ch(sio_buffer *buffer)`
 
-Partner keyboard helpers on SIO 1 channel A.
+Removes and returns one byte from a circular buffer.
 
-Useful constants:
+- Caller is expected to ensure the buffer is not empty first
 
-- `KBD_DATA`
-- `KBD_STATUS`
-- `KBD_STATUS_RX_READY`
-- `KBD_STATUS_TX_READY`
-- `KBD_CMD_BEEP`
+### `uint8_t serial_buffer_peek(sio_buffer *buffer, uint16_t idx)`
 
-`void kbd_wait_ready(void);`
+Reads a byte from the circular buffer without consuming it.
 
-```c
-kbd_wait_ready();
-```
+- `idx` is an offset relative to the current read position
 
-`void kbd_beep(bool long_beep);`
+### `uint16_t serial_buffer_get(sio_buffer *buffer, uint8_t *dest)`
 
-```c
-kbd_beep(false);
-```
+Drains buffered data into `dest` and returns the number of copied bytes.
 
-`char kbd_get_key(void);`
+- Caller must provide enough space in `dest`
+- Useful for retrieving a whole receive chunk at once
 
-```c
-char ch = kbd_get_key();
-```
+### `sio_exit_code serial_exchange(sio_port *port)`
 
-</details>
+Runs one polling send/receive exchange cycle.
 
-<details>
-<summary><code>partner/hw/partner/rtc.h</code></summary>
+- Processes pending transmit bytes
+- Pulls any received bytes into the input buffer
+- Returns an activity/overflow result code
 
-Partner MM58167A RTC services and port map.
+### `bool serial_send(sio_port *port)`
 
-Useful constants:
+Flushes queued transmit data as far as possible.
 
-- `MM58167A_THOUS_S`
-- `MM58167A_HUNDR_S`
-- `MM58167A_SECOND`
-- `MM58167A_MINUTE`
-- `MM58167A_HOUR`
-- `MM58167A_WDAY`
-- `MM58167A_MDAY`
-- `MM58167A_MONTH`
-- `MM58167A_YEAR`
-- `MM58167A_GO`
-- `MM58167A_RESET_NVRAM`
+- Returns `true` when the transmit buffer is empty after the call
+- Returns `false` if data remains queued
 
-Type:
+### `void serial_set_rts(sio_port *port, bool state)`
 
-- `rtc_time_t`
+Asserts or deasserts RTS for the selected logical serial port.
 
-`void rtc_reset(void);`
+- `true` enables RTS
+- `false` clears RTS
 
-```c
-rtc_reset();
-```
+### `bool serial_check_cts(sio_port *port)`
 
-`void rtc_reset_nvram(void);`
+Reads the current CTS input state for the selected serial port.
 
-```c
-rtc_reset_nvram();
-```
+- Returns `true` if CTS is asserted
+- Used directly or as part of RTS/CTS flow-control handling
 
-`void rtc_get(rtc_time_t *t);`
+### `void serial_done(sio_port *port)`
 
-```c
-rtc_time_t now;
-rtc_get(&now);
-```
+Releases all resources associated with a serial port object.
 
-`void rtc_set(const rtc_time_t *t);`
+- Frees input and output buffers
+- Frees the `sio_port` allocation itself
 
-```c
-rtc_time_t t = { 0, 0, 30, 12, 1, 1, 1, 26 };
-rtc_set(&t);
-```
+## partner/timer.h
 
-</details>
+Top-level short-interval timer helpers.
 
-<details>
-<summary><code>partner/hw/partner/serial.h</code></summary>
+These are a subset of the timing functions also exposed through `partner/clock.h`.
 
-Partner serial services and Partner SIO port map.
+### `uint16_t timer_ms(void)`
 
-Port constants:
+Returns the current timer value in milliseconds inside a rolling 60-second window.
 
-- `Z80SIO1_DATA_A`, `Z80SIO1_CTRL_A`
-- `Z80SIO1_DATA_B`, `Z80SIO1_CTRL_B`
-- `Z80SIO2_DATA_A`, `Z80SIO2_CTRL_A`
-- `Z80SIO2_DATA_B`, `Z80SIO2_CTRL_B`
-- `Z80SIO_RR0_RX_AVAIL`
-- `Z80SIO_RR0_TX_EMPTY`
-- `Z80SIO_RR0_CTS`
+### `int16_t timer(void)`
 
-Configuration enums:
+Returns the current timer value in 1/100-second ticks inside a rolling 60-second window.
 
-- `sio_flow_control`
-- `sio_bauds`
-- `sio_stop_bits`
-- `sio_parity`
-- `sio_data_bits`
-- `sio_mode`
-- `sio_exit_code`
-- `sio_port_addr`
+### `int16_t timer_diff(uint16_t timer_start, uint16_t timer_offset)`
 
-Types:
-
-- `sio_buffer`
-- `sio_port`
-
-`sio_port *serial_init(...);`
-
-```c
-sio_port *port = serial_init(
-    SIO_PORT_LPT,
-    SIO_MODE_POLLING,
-    SIO_BAUDS_9600,
-    SIO_DATA_BITS_8,
-    SIO_STOP_BITS_1,
-    SIO_PARITY_NONE,
-    SIO_FLOW_CONTROL_NONE
-);
-```
-
-`sio_port *serial_init_ex(...);`
-
-```c
-sio_port *port = serial_init_ex(
-    SIO_PORT_LPT,
-    SIO_MODE_POLLING,
-    SIO_BAUDS_9600,
-    SIO_DATA_BITS_8,
-    SIO_STOP_BITS_1,
-    SIO_PARITY_NONE,
-    SIO_FLOW_CONTROL_NONE,
-    512, 128, 64, 100
-);
-```
-
-`bool serial_buffer_put(sio_buffer *buffer, uint16_t len, const uint8_t *values);`
-
-```c
-static const uint8_t msg[] = { 'O', 'K' };
-serial_buffer_put(&port->buffer_out, 2, msg);
-```
-
-`bool serial_buffer_put_ch(sio_buffer *buffer, uint8_t ch);`
-
-```c
-serial_buffer_put_ch(&port->buffer_out, 'A');
-```
-
-`bool serial_buffer_put_str(sio_buffer *buffer, const uint8_t *str);`
-
-```c
-serial_buffer_put_str(&port->buffer_out, (const uint8_t *)"HELLO");
-```
-
-`bool serial_buffer_empty(sio_buffer *buffer);`
-
-```c
-if (serial_buffer_empty(&port->buffer_in)) {
-}
-```
-
-`uint8_t serial_buffer_get_ch(sio_buffer *buffer);`
-
-```c
-uint8_t ch = serial_buffer_get_ch(&port->buffer_in);
-```
-
-`uint8_t serial_buffer_peek(sio_buffer *buffer, uint16_t idx);`
-
-```c
-uint8_t ch = serial_buffer_peek(&port->buffer_in, 0);
-```
-
-`uint16_t serial_buffer_get(sio_buffer *buffer, uint8_t *dest);`
-
-```c
-uint8_t buf[32];
-uint16_t n = serial_buffer_get(&port->buffer_in, buf);
-```
-
-`sio_exit_code serial_exchange(sio_port *port);`
-
-```c
-sio_exit_code rc = serial_exchange(port);
-```
-
-`bool serial_send(sio_port *port);`
-
-```c
-serial_send(port);
-```
-
-`void serial_set_rts(sio_port *port, bool state);`
-
-```c
-serial_set_rts(port, true);
-```
-
-`bool serial_check_cts(sio_port *port);`
-
-```c
-if (serial_check_cts(port)) {
-}
-```
-
-`void serial_done(sio_port *port);`
-
-```c
-serial_done(port);
-```
-
-</details>
-
-<details>
-<summary><code>partner/hw/chips/scn2674.h</code></summary>
-
-Raw SCN2674 controller primitives.
-
-`void scn2674_wait_rdy(void);`
-
-```c
-scn2674_wait_rdy();
-```
-
-`void scn2674_set_cursor(uint16_t addr);`
-
-```c
-scn2674_set_cursor(0x0200);
-```
-
-`uint16_t scn2674_get_cursor(void);`
-
-```c
-uint16_t addr = scn2674_get_cursor();
-```
-
-`void scn2674_set_pointer(uint16_t addr);`
-
-```c
-scn2674_set_pointer(0x0300);
-```
-
-`void scn2674_cursor_on(void);`
-
-```c
-scn2674_cursor_on();
-```
-
-`void scn2674_cursor_off(void);`
-
-```c
-scn2674_cursor_off();
-```
-
-</details>
-
-<details>
-<summary><code>partner/hw/chips/mm58167a.h</code></summary>
-
-Chip-level placeholder for MM58167A.
-
-Partner-specific bindings live in `partner/hw/partner/rtc.h`.
-
-```c
-#include <partner/hw/chips/mm58167a.h>
-```
-
-</details>
-
-<details>
-<summary><code>partner/hw/chips/z80sio.h</code></summary>
-
-Chip-level placeholder for Z80 SIO.
-
-Partner-specific bindings live in `partner/hw/partner/serial.h`.
-
-```c
-#include <partner/hw/chips/z80sio.h>
-```
-
-</details>
-
-## Samples
-
-Current samples:
-
-- `samples/console.c`
-- `samples/mouse.c`
-- `samples/sysinfo.c`
-- `samples/terminal.c`
-
-Build them and create a CP/M disk image:
-
-```sh
-make samples
-```
-
-Outputs:
-
-- `bin/samples/console.com`
-- `bin/samples/mouse.com`
-- `bin/samples/sysinfo.com`
-- `bin/samples/terminal.com`
-- `bin/samples.img`
-
-## Notes
-
-- Start with `partner.h` for applications.
-- Use `partner/conio.h` for text-mode programs.
-- Use `partner/mouse.h` for generic streaming serial mice.
-- Use `partner/hw/partner/nvram.h` to read or change Partner setup values.
-- Use `partner/hw/partner/serial.h` for Partner serial communication.
-- Use `partner/port.h` only when you need direct raw I/O port access.
+Computes a wrapped elapsed interval from a previous timer reading and an offset.

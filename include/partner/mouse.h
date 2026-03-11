@@ -20,7 +20,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <partner/hw/partner/serial.h>
+#include <partner/serial.h>
 
 typedef enum mouse_type_s {
     MOUSE_MICROSOFT,

@@ -11,7 +11,8 @@
  */
 #include <stdint.h>
 
-#include <partner.h>
+#include <partner/conio.h>
+#include <partner/serial.h>
 
 void main(void) {
     sio_port *port;

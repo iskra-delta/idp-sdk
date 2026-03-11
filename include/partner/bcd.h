@@ -14,7 +14,10 @@
 
 #include <stdint.h>
 
+/* Convert an 8-bit binary value to packed BCD. */
 extern uint8_t bin2bcd(uint8_t bin);
+
+/* Convert an 8-bit packed BCD value to binary. */
 extern uint8_t bcd2bin(uint8_t bcd);
 
 #endif /* __PARTNER_BCD_H__ */
