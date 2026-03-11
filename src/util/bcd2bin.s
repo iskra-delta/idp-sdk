@@ -16,13 +16,10 @@
         ;; convert bcd number to binary
         ;; NOTES:
         ;;  converts one packed bcd value to binary
-        ;; inputs: stack arg bcd
+        ;; inputs: a=bcd
         ;; outputs: l=binary value
         ;; affects: af, bc, hl
 _bcd2bin::
-        ld      hl,#2
-        add     hl,sp
-        ld      a,(hl)
         ld      c,a
         and     #0xf0
         srl     a

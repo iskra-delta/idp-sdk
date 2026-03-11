@@ -82,9 +82,9 @@ typedef struct nvram_settings_s {
 } nvram_settings_t;
 
 /* Read and decode Partner system settings from MM58167A NVRAM. */
-void nvram_get_settings(nvram_settings_t *settings);
+extern void nvram_get_settings(nvram_settings_t *settings);
 
 /* Encode and write Partner system settings to MM58167A NVRAM. */
-void nvram_set_settings(const nvram_settings_t *settings);
+extern void nvram_set_settings(const nvram_settings_t *settings);
 
 #endif /* __PARTNER_NVRAM_H__ */

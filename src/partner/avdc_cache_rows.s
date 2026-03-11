@@ -27,7 +27,7 @@
 _avdc_cache_rows::
         ld      c,#0
 .cache_loop:
-        ld      a,c
+        ld      l,c
         call    _avdc_rowptr_raw
         ld      l,c
         ld      h,#0

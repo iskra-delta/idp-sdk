@@ -34,12 +34,12 @@
 #define KBD_CMD_BEEP        0x07
 
 /* Wait until the keyboard / terminal transmit side is ready. */
-void kbd_wait_ready(void);
+extern void kbd_wait_ready(void);
 
 /* Emit a short bell; long bell sends BEL twice. */
-void kbd_beep(bool long_beep);
+extern void kbd_beep(bool long_beep);
 
 /* Read a key and collapse ANSI / VT52 escape sequences. */
-char kbd_get_key(void);
+extern  char kbd_get_key(void);
 
 #endif /* __PARTNER_KBD_H__ */

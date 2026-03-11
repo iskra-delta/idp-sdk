@@ -1,10 +1,10 @@
-IMAGE ?= wischner/sdcc-z80-idp
+IMAGE ?= wischner/sdcc-z80-cpm3
 DOCKER ?= docker
 CPMDISK ?= cpmdisk
 
 .PHONY: all build samples clean distclean shell
 
-all: build
+all: build samples
 
 build:
 	@mkdir -p build bin

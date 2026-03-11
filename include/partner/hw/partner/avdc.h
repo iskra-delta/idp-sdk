@@ -143,9 +143,6 @@ extern void avdc_hide_cursor(void);
 /* move cursor to x,y */
 extern void avdc_xy(int x, int y);
 
-/* write a burst of chars with one attribute */
-extern void avdc_burst(const char *chars, uint8_t attr, uint8_t count);
-
 /* write char and attribute at cursor */
 extern void avdc_putchar(char ch, unsigned char attr);
 

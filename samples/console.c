@@ -9,22 +9,40 @@
  * 11.08.2021   tstih
  *
  */
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <partner.h>
 
-void wait(const char *msg) {
+#define ANSI_RESET      "\x1b[0m"
+#define ANSI_BOLD       "\x1b[1m"
+#define ANSI_REVERSE    "\x1b[7m"
+#define ANSI_DIM        "\x1b[2m"
+
+static void print_debug_info(const char *title, const z80_registers_t *regs) {
+
+    printf("\n" ANSI_REVERSE ANSI_BOLD " %s " ANSI_RESET "\n", title);
+    printf(ANSI_DIM " main set " ANSI_RESET
+           "AF=%04X    BC=%04X    DE=%04X    HL=%04X    IX=%04X    IY=%04X\n",
+        regs->af, regs->bc, regs->de, regs->hl, regs->ix, regs->iy);
+    printf(ANSI_DIM " state    " ANSI_RESET
+           "SP=%04X    PC=%04X    I=%02X      R=%02X\n",
+        regs->sp, regs->pc, regs->i, regs->r);
+    printf(ANSI_DIM " alt set  " ANSI_RESET
+           "AF'=%04X   BC'=%04X   DE'=%04X   HL'=%04X\n",
+        regs->af_shadow, regs->bc_shadow, regs->de_shadow, regs->hl_shadow);
+}
+
+static const void wait(const char *msg) {
     cputs(msg);
-    while (!kbhit());
+    // while (!kbhit());
 }
 
 char line[133];
 char text[133];
 struct text_info ti;
 
-void main(void) {
-    unsigned char i;
+int main(void) {
+
+unsigned char i;
     unsigned char j;
     char ch;
     unsigned char a;
@@ -39,7 +57,7 @@ void main(void) {
         gotoxy(0, i);
         cputs(line);
     }
-    while (!kbhit());
+    wait("Press any key.");
 
     /* ----- HIDE CURSOR AND CLEAR SCREEN--------------- */
     setcursortype(NOCURSOR);
@@ -85,4 +103,6 @@ void main(void) {
     gotoxy(0, 17);
     setattr(AT_NORMAL);
     wait("Press any key.");
+
+    return 0;
 }

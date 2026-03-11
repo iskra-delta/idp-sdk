@@ -22,12 +22,12 @@
 #include <stdint.h>
 
 /* Read the current timer value in milliseconds within a 60 second window. */
-uint16_t timer_ms(void);
+extern uint16_t timer_ms(void);
 
 /* Read the current timer value in 1/100 second ticks within a 60 second window. */
-int16_t timer(void);
+extern int16_t timer(void);
 
 /* Compute wrapped difference from a previous timer value and offset. */
-int16_t timer_diff(uint16_t timer_start, uint16_t timer_offset);
+extern int16_t timer_diff(uint16_t timer_start, uint16_t timer_offset);
 
 #endif /* __PARTNER_TIMER_H__ */

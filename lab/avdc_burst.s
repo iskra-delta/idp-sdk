@@ -13,7 +13,7 @@
         .globl  _avdc_wait_mem_acc
         .globl  _scn2674_wait_rdy
 
-        .include "avdc.inc"
+        .include "../src/partner/avdc.inc"
 
         .area   _CODE
 
@@ -23,17 +23,17 @@
         ;;  writes count characters from chars using the
         ;;  same attribute byte while periodically waiting
         ;;  for a safe memory access window
-        ;; inputs: stack args chars, attr, count
+        ;; inputs: hl=chars; attr at sp+2, count at sp+3 (at function entry)
         ;; outputs: none
         ;; affects: af, bc, de, hl
 _avdc_burst::
-        pop     bc
-        pop     hl
-        pop     de
-        push    de
-        push    hl
-        push    bc
-        ld      b,d
+        push    hl               ; after push: attr at sp+4, count at sp+5
+        ld      hl,#4
+        add     hl,sp
+        ld      e,(hl)           ; E = attr (from sp+4)
+        inc     hl
+        ld      b,(hl)           ; B = count (from sp+5)
+        pop     hl               ; restore HL = chars
         ex      af,af'
         ld      a,#MAX_BURST_CYCLE
         ex      af,af'

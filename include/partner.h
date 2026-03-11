@@ -15,6 +15,7 @@
 #include <partner/bcd.h>
 #include <partner/conio.h>
 #include <partner/mouse.h>
+#include <partner/hw/chips/z80.h>
 #include <partner/hw/partner/nvram.h>
 #include <partner/hw/partner/serial.h>
 #include <partner/timer.h>

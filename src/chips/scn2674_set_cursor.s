@@ -11,6 +11,7 @@
 
         .globl  _scn2674_set_cursor
         .globl  _scn2674_wait_rdy
+        .globl  _avdc_wait_mem_acc
 
         .include "../partner/avdc.inc"
 
@@ -20,15 +21,13 @@
         ;; writes cursor address from hl
         ;; NOTES:
         ;;  updates the SCN2674 cursor low and high
-        ;;  registers after waiting for the device
-        ;; inputs: stack arg addr
+        ;;  registers during a valid display-memory
+        ;;  access window and after the device is ready
+        ;; inputs: hl=addr
         ;; outputs: none
-        ;; affects: af, hl
+        ;; affects: af
 _scn2674_set_cursor::
-        pop     de
-        pop     hl
-        push    hl
-        push    de
+        call    _avdc_wait_mem_acc
         call    _scn2674_wait_rdy
         ld      a,l
         out     (#SCN2674_CUR_LO),a

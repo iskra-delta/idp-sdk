@@ -45,11 +45,10 @@
         ;;  rows. row table spans from addr 0 to addr 52.
         ;;  this is enough to store pointers for 26 rows.
         ;;  each row is 132 characters wide.
-        ;; inputs: a=row index
+        ;; inputs: l=row index
         ;; outputs: de=row address, hl=row address
         ;; affects: af, de, hl
 _avdc_rowptr_raw::
-        ld      l,a
         ld      h,#0
         add     hl,hl
         call    .avdc_read_at_pointer

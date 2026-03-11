@@ -9,7 +9,7 @@ LIB_PATH := $(BIN_DIR)/$(LIB_NAME)
 CC := sdcc
 AS := sdasz80
 AR := sdar
-CFLAGS := -mz80 -I$(INCLUDE_DIR)
+CFLAGS := -I$(INCLUDE_DIR)
 ASFLAGS := -o
 
 C_SOURCES := $(shell find . -name '*.c' -print)

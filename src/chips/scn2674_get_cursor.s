@@ -11,23 +11,26 @@
 
         .globl  _scn2674_get_cursor
         .globl  _scn2674_wait_rdy
+        .globl  _avdc_wait_mem_acc
 
         .include "../partner/avdc.inc"
 
         .area   _CODE
 
         ;; scn2674_get_cursor
-        ;; reads cursor address into hl
+        ;; reads cursor address into de
         ;; NOTES:
         ;;  reads the SCN2674 cursor low and high
-        ;;  registers after waiting for the device
+        ;;  registers during a valid display-memory
+        ;;  access window and after the device is ready
         ;; inputs: none
-        ;; outputs: hl=cursor address
-        ;; affects: af, hl
+        ;; outputs: de=cursor address
+        ;; affects: af, de
 _scn2674_get_cursor::
+        call    _avdc_wait_mem_acc
         call    _scn2674_wait_rdy
         in      a,(#SCN2674_CUR_LO)
-        ld      l,a
+        ld      e,a
         in      a,(#SCN2674_CUR_HI)
-        ld      h,a
+        ld      d,a
         ret

@@ -22,14 +22,10 @@
         ;;  programs the SCN2674 pointer registers by
         ;;  first selecting the initialization register
         ;;  pair and then writing low/high bytes
-        ;; inputs: stack arg addr
+        ;; inputs: hl=addr
         ;; outputs: none
-        ;; affects: af, hl
+        ;; affects: af
 _scn2674_set_pointer::
-        pop     de
-        pop     hl
-        push    hl
-        push    de
         call    _scn2674_wait_rdy
         ld      a,#0x1A
         out     (#SCN2674_CMD), a

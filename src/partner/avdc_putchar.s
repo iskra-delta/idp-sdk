@@ -22,19 +22,16 @@
         ;; NOTES:
         ;;  writes the character and attribute to the
         ;;  current cursor position without moving it
-        ;; inputs: stack args ch, attr
+        ;; inputs: a=ch, l=attr
         ;; outputs: none
         ;; affects: af, bc, hl
 _avdc_putchar::
-        pop     bc
-        pop     hl
-        push    hl
-        push    bc
+        ld      b,a              ; B = ch (save; wait calls only affect AF)
         call    _avdc_wait_mem_acc
         call    _scn2674_wait_rdy
-        ld      a,l
+        ld      a,b              ; A = ch
         out     (SCN2674_CHR),a
-        ld      a,h
+        ld      a,l              ; A = attr (L preserved across calls)
         out     (SCN2674_AT),a
         call    _scn2674_wait_rdy
         call    _scn2674_wait_rdy

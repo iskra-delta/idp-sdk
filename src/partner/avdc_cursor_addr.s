@@ -21,9 +21,7 @@
         ;;  current cursor address
         ;; inputs: none
         ;; outputs: de=cursor address
-        ;; affects: af, de, hl
+        ;; affects: af, de
 _avdc_cursor_addr::
         call    _scn2674_get_cursor
-        ld      d,h
-        ld      e,l
         ret

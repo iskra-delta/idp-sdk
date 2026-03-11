@@ -9,7 +9,7 @@
  * 08.03.2026   tstih
  *
  */
-#include <partner/port.h>
+#include <partner/hw/chips/z80.h>
 #include <partner/hw/partner/nvram.h>
 
 /* Decode the 0xAB terminal/language byte into structured fields. */
@@ -82,24 +82,24 @@ static uint8_t nvram_encode_keyboard(const nvram_settings_t *settings) {
 
 /* Read and decode Partner system settings from MM58167A NVRAM. */
 void nvram_get_settings(nvram_settings_t *settings) {
-    settings->raw_a8 = port_in(MM58167A_NVRAM_A8);
-    settings->year = port_in(MM58167A_NVRAM_YEAR);
-    settings->raw_aa = port_in(MM58167A_NVRAM_AA);
-    nvram_decode_term_lang(settings, port_in(MM58167A_NVRAM_TERM_LANG));
-    settings->screen_width = (nvram_screen_width)port_in(MM58167A_NVRAM_SCREEN_WIDTH);
-    settings->raw_ad = port_in(MM58167A_NVRAM_AD);
-    nvram_decode_display(settings, port_in(MM58167A_NVRAM_DISPLAY));
-    nvram_decode_keyboard(settings, port_in(MM58167A_NVRAM_KEYBOARD));
+    settings->raw_a8 = z80_port_in(MM58167A_NVRAM_A8);
+    settings->year = z80_port_in(MM58167A_NVRAM_YEAR);
+    settings->raw_aa = z80_port_in(MM58167A_NVRAM_AA);
+    nvram_decode_term_lang(settings, z80_port_in(MM58167A_NVRAM_TERM_LANG));
+    settings->screen_width = (nvram_screen_width)z80_port_in(MM58167A_NVRAM_SCREEN_WIDTH);
+    settings->raw_ad = z80_port_in(MM58167A_NVRAM_AD);
+    nvram_decode_display(settings, z80_port_in(MM58167A_NVRAM_DISPLAY));
+    nvram_decode_keyboard(settings, z80_port_in(MM58167A_NVRAM_KEYBOARD));
 }
 
 /* Encode and write Partner system settings to MM58167A NVRAM. */
 void nvram_set_settings(const nvram_settings_t *settings) {
-    port_out(MM58167A_NVRAM_A8, settings->raw_a8);
-    port_out(MM58167A_NVRAM_YEAR, settings->year);
-    port_out(MM58167A_NVRAM_AA, settings->raw_aa);
-    port_out(MM58167A_NVRAM_TERM_LANG, nvram_encode_term_lang(settings));
-    port_out(MM58167A_NVRAM_SCREEN_WIDTH, (uint8_t)settings->screen_width);
-    port_out(MM58167A_NVRAM_AD, settings->raw_ad);
-    port_out(MM58167A_NVRAM_DISPLAY, nvram_encode_display(settings));
-    port_out(MM58167A_NVRAM_KEYBOARD, nvram_encode_keyboard(settings));
+    z80_port_out(MM58167A_NVRAM_A8, settings->raw_a8);
+    z80_port_out(MM58167A_NVRAM_YEAR, settings->year);
+    z80_port_out(MM58167A_NVRAM_AA, settings->raw_aa);
+    z80_port_out(MM58167A_NVRAM_TERM_LANG, nvram_encode_term_lang(settings));
+    z80_port_out(MM58167A_NVRAM_SCREEN_WIDTH, (uint8_t)settings->screen_width);
+    z80_port_out(MM58167A_NVRAM_AD, settings->raw_ad);
+    z80_port_out(MM58167A_NVRAM_DISPLAY, nvram_encode_display(settings));
+    z80_port_out(MM58167A_NVRAM_KEYBOARD, nvram_encode_keyboard(settings));
 }

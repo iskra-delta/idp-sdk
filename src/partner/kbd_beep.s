@@ -20,17 +20,15 @@
         ;; emits BEL on SIO 1 channel A
         ;; NOTES:
         ;;  a long beep is approximated by sending BEL twice
-        ;; inputs: stack arg long_beep
+        ;; inputs: a=long_beep
         ;; outputs: none
-        ;; affects: af, hl
+        ;; affects: af, bc
 _kbd_beep::
+        ld      b,a              ; B = long_beep (save; wait only affects AF)
         call    _kbd_wait_ready
         ld      a,#0x07
         out     (#Z80SIO1_DATA_A),a
-
-        ld      hl,#2
-        add     hl,sp
-        ld      a,(hl)
+        ld      a,b              ; A = long_beep
         or      a
         ret     z
 

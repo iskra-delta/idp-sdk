@@ -10,9 +10,9 @@
         .module avdc_cls
 
         .globl  _avdc_cls
+        .globl  _avdc_cache_rows
         .globl  _avdc_wait_mem_acc
         .globl  _avdc_rowptr_raw
-        .globl  _avdc_cache_rows
         .globl  _scn2674_set_cursor
         .globl  _scn2674_set_pointer
         .globl  _scn2674_wait_rdy
@@ -34,14 +34,12 @@ _avdc_cls::
         ld      b,#26
 .cls_loop:
         call    _avdc_wait_mem_acc
-        ld      a,b
-        dec     a
+        ld      l,b
+        dec     l
         call    _avdc_rowptr_raw
-        push    hl
         call    _scn2674_set_cursor
         ld      de,#131
         add     hl,de
-        push    hl
         call    _scn2674_set_pointer
         call    _scn2674_wait_rdy
         ld      a,#32
@@ -51,9 +49,8 @@ _avdc_cls::
         ld      a,#SCN2674_CMD_WC2P
         out     (#SCN2674_CMD),a
         djnz    .cls_loop
-        xor     a
+        ld      l,#0
         call    _avdc_rowptr_raw
-        push    hl
         call    _scn2674_set_cursor
         call    _avdc_cache_rows
         ret

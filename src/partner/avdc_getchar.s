@@ -22,7 +22,7 @@
         ;; NOTES:
         ;;  reads the character and attribute from the
         ;;  current cursor position without moving it
-        ;; inputs: stack args ch, attr
+        ;; inputs: hl=ch, de=attr
         ;; outputs: *ch=character, *attr=attribute
         ;; affects: af, bc, hl
 _avdc_getchar::
@@ -31,14 +31,9 @@ _avdc_getchar::
         ld      a,#SCN2674_CMD_RAC
         out     (SCN2674_CMD),a
         call    _scn2674_wait_rdy
-        pop     bc
-        pop     hl
         in      a,(SCN2674_CHR)
         ld      (hl),a
-        pop     hl
+        ex      de,hl
         in      a,(SCN2674_AT)
         ld      (hl),a
-        push    hl
-        push    hl
-        push    bc
         ret

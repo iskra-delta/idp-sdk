@@ -21,24 +21,16 @@
         ;; NOTES:
         ;;  resolves the row start address from y and
         ;;  then adds x to position the cursor
-        ;; inputs: stack args x, y
+        ;; inputs: hl=x, de=y
         ;; outputs: none
         ;; affects: af, bc, de, hl
 _avdc_xy::
-        pop     de
-        pop     bc
-        pop     hl
-        push    hl
-        push    bc
-        push    de
-        ld      h,c
+        ld      c,l              ; C = x (low byte; only low byte used)
+        ld      l,e              ; L = y (row index)
         call    _avdc_wait_mem_acc
-        ld      c,h
-        ld      a,l
         call    _avdc_rowptr_raw
         ld      d,#0
-        ld      e,c
-        add     hl,de
-        push    hl
+        ld      e,c              ; DE = x (column offset)
+        add     hl,de            ; HL = row_addr + x = cursor address
         call    _scn2674_set_cursor
         ret

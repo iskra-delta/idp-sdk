@@ -11,16 +11,17 @@
 
         .globl  _avdc_rowptr
         .globl  _avdc_cache_rows
+        .globl  _avdc_rowptr_raw
         .globl  __avdc_row_cache
         .globl  __avdc_row_cache_valid
 
         .area   _CODE
 
         ;; avdc_rowptr
-        ;; returns cached row address
+        ;; returns row address
         ;; NOTES:
         ;;  lazily fills the row-pointer cache on first use
-        ;;  and returns the cached row start address
+        ;;  and then serves subsequent lookups from RAM
         ;; inputs: a=row index
         ;; outputs: de=row address
         ;; affects: af, bc, de, hl

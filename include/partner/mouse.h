@@ -22,7 +22,7 @@
 
 #include <partner/hw/partner/serial.h>
 
-typedef enum {
+typedef enum mouse_type_s {
     MOUSE_MICROSOFT,
     MOUSE_GENIUS_C7,
     MOUSE_MOUSESYSTEMS
@@ -51,15 +51,15 @@ typedef struct mouse_state_s {
 } mouse_t;
 
 /* Initialize a streaming serial mouse using the selected protocol. */
-mouse_t *mouse_init(mouse_type_t type);
+extern mouse_t *mouse_init(mouse_type_t type);
 
 /* Reset decoder state and clear accumulated motion. */
-void mouse_reset(mouse_t *mouse);
+extern void mouse_reset(mouse_t *mouse);
 
 /* Poll the serial port, decode any pending packets, and update state. */
-void mouse_poll(mouse_t *mouse);
+extern void mouse_poll(mouse_t *mouse);
 
 /* Free all resources associated with the mouse. */
-void mouse_done(mouse_t *mouse);
+extern void mouse_done(mouse_t *mouse);
 
 #endif /* __PARTNER_MOUSE_H__ */
