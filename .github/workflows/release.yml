@@ -35,21 +35,14 @@ jobs:
           STAGE_DIR="release/idp-sdk-${VERSION}"
 
           rm -rf release
-          mkdir -p "${STAGE_DIR}/lib" "${STAGE_DIR}/include" "${STAGE_DIR}/samples"
+          mkdir -p "${STAGE_DIR}/lib" "${STAGE_DIR}/include"
 
           cp "bin/libsdk.lib" "${STAGE_DIR}/lib/"
           cp "bin/libcpm3-z80.lib" "${STAGE_DIR}/lib/"
           cp "bin/libsdcc-z80.lib" "${STAGE_DIR}/lib/"
           cp "bin/crt0cpm3-z80.rel" "${STAGE_DIR}/lib/"
           cp -R "bin/include/." "${STAGE_DIR}/include/"
-          if [ -d "bin/samples" ]; then
-            cp -R "bin/samples/." "${STAGE_DIR}/samples/"
-          fi
-          if [ -f "bin/samples.img" ]; then
-            cp "bin/samples.img" "${STAGE_DIR}/"
-          fi
           cp LICENSE "${STAGE_DIR}/LICENSE"
-          cp README.md "${STAGE_DIR}/README.md"
 
           {
             echo "idp-sdk ${VERSION}"
@@ -62,10 +55,7 @@ jobs:
             echo "- lib/libsdcc-z80.lib"
             echo "- lib/crt0cpm3-z80.rel"
             echo "- include/"
-            echo "- samples/"
-            echo "- samples.img"
             echo "- LICENSE"
-            echo "- README.md"
           } > "${STAGE_DIR}/README-release.txt"
 
           tar -C release -czf "release/${ARCHIVE_NAME}" "idp-sdk-${VERSION}"
